@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Bitcoin Miner Gratuit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        .mining-animation {
+            animation: pulse 1.5s infinite;
+        }
+        .terminal {
+            font-family: 'Courier New', monospace;
+            background-color: #1a1a1a;
+            color: #00ff00;
+            height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .progress-bar {
+            height: 20px;
+            background-color: #2d3748;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4fd1c5, #4299e1);
+            transition: width 0.3s ease;
+        }
+        .download-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background-color: #1a365d;
+            border-left: 4px solid #4299e1;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        .download-notification.show {
+            transform: translateX(0);
+        }
+        .cpu-meter {
+            width: 100%;
+            height: 10px;
+            background-color: #2d3748;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .cpu-usage {
+            height: 100%;
+            background: linear-gradient(90deg, #68d391, #38b2ac);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <!-- Notification de téléchargement -->
+    <div id="download-notification" class="download-notification">
+        <div class="download-notification-header">
+            <div class="download-notification-title">
+                <i class="fas fa-download mr-2"></i>Téléchargement en cours
+            </div>
+            <div id="close-download-notification" class="download-notification-close">
+                <i class="fas fa-times"></i>
+            </div>
+        </div>
+        <div class="text-sm mb-2">CPU_Bitcoin_Miner_Free.zip</div>
+        <div class="progress-bar mb-2">
+            <div id="notification-progress" class="progress-fill" style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between text-xs">
+            <span id="notification-percent">0%</span>
+            <span id="notification-speed">0 KB/s</span>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-blue-400">
+                    <i class="fab fa-bitcoin mr-2"></i>CPU Bitcoin Miner Gratuit
+                </h1>
+                <p class="text-gray-400">Version 2.1.0 - Optimisé pour CPU</p>
+            </div>
+            <div class="bg-gray-800 px-4 py-2 rounded-lg">
+                <p class="text-blue-400 font-mono">Windows/Linux/Mac</p>
+            </div>
+        </header>
+
+        <div class="bg-gray-800 rounded-xl p-6 mb-8 shadow-lg">
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="md:w-2/3">
+                    <h2 class="text-xl font-bold mb-4 text-blue-400">Statistiques de minage</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-gray-700 p-4 rounded-lg">
+                            <p class="text-gray-400">Hashrate CPU</p>
+                            <p id="hashrate" class="text-2xl font-bold">0 H/s</p>
+                        </div>
+                        <div class="bg-gray-700 p-4 rounded-lg">
+                            <p class="text-gray-400">Gains quotidiens</p>
+                            <p class="text-2xl font-bold text-green-400">~$0.50</p>
+                        </div>
+                        <div class="bg-gray-700 p-4 rounded-lg">
+                            <p class="text-gray-400">Utilisation CPU</p>
+                            <div class="cpu-meter">
+                                <div id="cpu-usage" class="cpu-usage"></div>
+                            </div>
+                            <p id="cpu-percent" class="text-sm mt-1">0%</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="flex justify-between mb-2">
+                            <span>Progression du bloc</span>
+                            <span id="progress-percent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="terminal mb-4" id="miner-terminal">
+                        <p>> CPU Bitcoin Miner Gratuit v2.1.0</p>
+                        <p>> Détection du processeur...</p>
+                        <p>> Prêt à miner avec votre CPU</p>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button id="start-btn" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-bold flex items-center">
+                            <i class="fas fa-play mr-2"></i> Démarrer le minage
+                        </button>
+                        <button id="stop-btn" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-bold flex items-center" disabled>
+                            <i class="fas fa-stop mr-2"></i> Arrêter
+                        </button>
+                        <button id="settings-btn" class="bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg font-bold flex items-center">
+                            <i class="fas fa-cog mr-2"></i> Paramètres
+                        </button>
+                    </div>
+                </div>
+
+                <div class="md:w-1/3">
+                    <h2 class="text-xl font-bold mb-4 text-blue-400">Configuration</h2>
+                    <div class="bg-gray-700 p-4 rounded-lg mb-4">
+                        <p class="text-gray-400">Solde actuel</p>
+                        <p id="balance" class="text-3xl font-bold">0.00000000 BTC</p>
+                        <p id="balance-usd" class="text-green-400">$0.00</p>
+                    </div>
+
+                    <div class="bg-gray-700 p-4 rounded-lg mb-4">
+                        <label for="wallet-address" class="block text-gray-400 mb-2">Adresse Bitcoin</label>
+                        <input type="text" id="wallet-address" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 mb-3" placeholder="bc1q...">
+                        <label for="cpu-threads" class="block text-gray-400 mb-2">Threads CPU (1-<span id="max-threads">4</span>)</label>
+                        <input type="range" id="cpu-threads" min="1" max="4" value="2" class="w-full mb-3">
+                        <button id="save-config-btn" class="bg-blue-600 hover:bg-blue-700 w-full py-2 rounded-lg font-bold">
+                            Enregistrer
+                        </button>
+                    </div>
+
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h3 class="font-bold mb-2">Télécharger le mineur</h3>
+                        <p class="text-sm text-gray-400 mb-3">Version gratuite pour CPU</p>
+                        <button id="download-btn" class="bg-purple-600 hover:bg-purple-700 w-full py-3 rounded-lg font-bold flex items-center justify-center">
+                            <i class="fas fa-download mr-2"></i> Télécharger (ZIP)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Paramètres -->
+        <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden">
+            <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-blue-400">Paramètres avancés</h3>
+                    <button id="close-settings" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-400 mb-2">Intensité CPU</label>
+                    <select id="cpu-intensity" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2">
+                        <option value="low">Faible (recommandé)</option>
+                        <option value="medium">Moyenne</option>
+                        <option value="high">Élevée</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-400 mb-2">Pool de minage</label>
+                    <select id="mining-pool" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2">
+                        <option value="default">Pool par défaut</option>
+                        <option value="europe">Europe Pool</option>
+                        <option value="usa">USA Pool</option>
+                    </select>
+                </div>
+                <button id="save-settings" class="bg-blue-600 hover:bg-blue-700 w-full py-3 rounded-lg font-bold">
+                    Appliquer les paramètres
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables d'état
+        let isMining = false;
+        let balance = 0;
+        let miningInterval;
+        let progress = 0;
+        let downloadInterval;
+        let cpuThreads = 2;
+        let cpuUsage = 0;
+        let hashrate = 0;
+        
+        // Éléments DOM
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const settingsBtn = document.getElementById('settings-btn');
+        const saveConfigBtn = document.getElementById('save-config-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const terminal = document.getElementById('miner-terminal');
+        const balanceElement = document.getElementById('balance');
+        const balanceUsdElement = document.getElementById('balance-usd');
+        const progressFill = document.getElementById('progress-fill');
+        const progressPercent = document.getElementById('progress-percent');
+        const cpuUsageElement = document.getElementById('cpu-usage');
+        const cpuPercentElement = document.getElementById('cpu-percent');
+        const hashrateElement = document.getElementById('hashrate');
+        const cpuThreadsInput = document.getElementById('cpu-threads');
+        const maxThreadsElement = document.getElementById('max-threads');
+        
+        // Détection du nombre de threads CPU
+        const maxThreads = navigator.hardwareConcurrency || 4;
+        maxThreadsElement.textContent = maxThreads;
+        cpuThreadsInput.max = maxThreads;
+        cpuThreadsInput.value = Math.floor(maxThreads / 2);
+
+        // Fonctions
+        function startMining() {
+            if (isMining) return;
+            
+            const walletAddress = document.getElementById('wallet-address').value;
+            if (!walletAddress) {
+                alert("Veuillez configurer une adresse Bitcoin avant de miner");
+                return;
+            }
+            
+            isMining = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            startBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            startBtn.classList.add('bg-gray-600');
+            
+            // Animation de minage
+            terminal.classList.add('mining-animation');
+            
+            // Ajouter des messages au terminal
+            addTerminalMessage("> Démarrage du minage CPU...");
+            setTimeout(() => addTerminalMessage(`> Utilisation de ${cpuThreadsInput.value} threads CPU`), 800);
+            setTimeout(() => addTerminalMessage("> Connexion au pool de minage..."), 1500);
+            setTimeout(() => addTerminalMessage("> Minage en cours..."), 2000);
+            
+            // Simuler la progression et les stats
+            progress = 0;
+            cpuUsage = 0;
+            hashrate = 0;
+            
+            miningInterval = setInterval(() => {
+                // Mettre à jour la progression
+                progress += Math.random() * 3;
+                if (progress >= 100) {
+                    progress = 0;
+                    // Quand un bloc est "miné", ajouter du BTC au solde
+                    const minedBtc = 0.000001 + Math.random() * 0.000002;
+                    balance += minedBtc;
+                    updateBalance();
+                    addTerminalMessage(`> Bloc miné! +${minedBtc.toFixed(8)} BTC`);
+                }
+                updateProgress(progress);
+                
+                // Simuler l'utilisation CPU
+                cpuUsage = Math.min(100, cpuUsage + (Math.random() * 10 - 3));
+                if (cpuUsage < 30) cpuUsage += 5;
+                updateCpuUsage(cpuUsage);
+                
+                // Simuler le hashrate
+                hashrate = Math.floor(5000 + Math.random() * 10000 * (cpuThreadsInput.value / maxThreads));
+                updateHashrate(hashrate);
+            }, 500);
+        }
+        
+        function stopMining() {
+            if (!isMining) return;
+            
+            clearInterval(miningInterval);
+            isMining = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            startBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+            startBtn.classList.remove('bg-gray-600');
+            
+            terminal.classList.remove('mining-animation');
+            addTerminalMessage("> Minage arrêté");
+            
+            // Réinitialiser les stats
+            cpuUsage = 0;
+            hashrate = 0;
+            updateCpuUsage(0);
+            updateHashrate(0);
+        }
+        
+        function updateProgress(value) {
+            const percent = Math.min(100, Math.max(0, value));
+            progressFill.style.width = `${percent}%`;
+            progressPercent.textContent = `${Math.floor(percent)}%`;
+        }
+        
+        function updateBalance() {
+            const btcPrice = 50000; // Prix fictif du BTC en USD
+            balanceElement.textContent = balance.toFixed(8) + " BTC";
+            balanceUsdElement.textContent = `$${(balance * btcPrice).toFixed(2)}`;
+        }
+        
+        function updateCpuUsage(percent) {
+            cpuUsageElement.style.width = `${percent}%`;
+            cpuPercentElement.textContent = `${Math.floor(percent)}%`;
+        }
+        
+        function updateHashrate(rate) {
+            if (rate < 1000) {
+                hashrateElement.textContent = `${rate} H/s`;
+            } else if (rate < 1000000) {
+                hashrateElement.textContent = `${(rate/1000).toFixed(1)} KH/s`;
+            } else {
+                hashrateElement.textContent = `${(rate/1000000).toFixed(1)} MH/s`;
+            }
+        }
+        
+        function addTerminalMessage(message) {
+            const p = document.createElement('p');
+            p.textContent = message;
+            terminal.appendChild(p);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+        
+        function generateMinerFile() {
+            // Créer un contenu réaliste pour le fichier ZIP
+            const content = `
+CPU Bitcoin Miner Gratuit - Version 2.1.0
+=========================================
+
+Fichiers inclus:
+- cpu_miner.exe (Application principale Windows)
+- cpu_miner_linux (Binaire Linux)
+- cpu_miner_mac (Binaire macOS)
+- config.ini (Fichier de configuration)
+- README.txt (Instructions)
+
+Configuration requise:
+- CPU 64-bit avec support SSE2
+- 2 Go de RAM minimum
+- Windows 7+/Linux/macOS
+
+Instructions:
+1. Extraire tous les fichiers
+2. Modifier config.ini avec votre adresse BTC
+3. Exécuter le binaire correspondant à votre OS
+
+Paramètres recommandés:
+- Threads: ${Math.floor(maxThreads / 2)} sur ${maxThreads} disponibles
+- Intensité: Faible pour un
+</body>
+</html>
